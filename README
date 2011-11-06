@@ -4,6 +4,7 @@ command.
 TODO:
 Shorter commands?
 Documentation
+Add settings for ctags command line
 Make it easier to add files
 Make it easier to open a project
 Tab completion when loading project/adding files?
