@@ -1,4 +1,11 @@
-Automatically updates tags when saving, and provides a project-wide grep
+Automatically updates tags when saving and provides a project-wide grep
 command.
 
-Documentation is TBD.
+TODO:
+Shorter commands?
+Documentation
+Make it easier to add files
+Make it easier to open a project
+Tab completion when loading project/adding files?
+Handle if ctags executable is missing
+Add cscope support
