@@ -1,5 +1,13 @@
-fun! ProGrepFun(grepcommand)
-    if exists("s:files_dict")
+fun! s:ProGrepFun(grepcommand)
+    if !exists("s:files_dict")
+        echohl Error
+        echom "No project file loaded."
+        echohl None
+    elseif empty(s:files_dict)
+        echohl Error
+        echom "No files in project."
+        echohl None
+    else
         let grepcommand = "vimgrep ".a:grepcommand.' '.join(keys(s:files_dict), ' ')
         try
             exec grepcommand
@@ -10,14 +18,7 @@ fun! ProGrepFun(grepcommand)
         exec "2match Search ".substitute(a:grepcommand, "\\(^/.*/\\).*$", "\\1", "")
     endif
 endfun
-command! -nargs=1 ProGrep call ProGrepFun("<args>")
-
-fun! ProGrepWord(word)
-    normal! gew
-    call ProGrepFun("/\\<".a:word."\\>/gj")
-endfun
-nmap <F9> :call ProGrepWord(expand("<cword>"))<cr>
-nmap <F10> :cc 1<cr>
+command! -nargs=1 ProGrep call s:ProGrepFun("<args>")
 
 fun! s:ProTagUpdate(fname)
     if exists("s:tags_file")
@@ -25,10 +26,15 @@ fun! s:ProTagUpdate(fname)
         let ftype = fnamemodify(a:fname, ":e")
         " TODO ctags command line depends on filetype
         if ftype == 'c' || ftype == 'h' || ftype == 'cpp' || ftype == 'py' || ftype == 'vim'
-            exec "keepalt silent e ".s:tags_file
-            exec "silent g/".escape(fname,'/')."/d"
-            keepalt silent w
-            keepalt silent bwipe
+            if filereadable(s:tags_file)
+                let tfile = readfile(s:tags_file)
+                let i = match(tfile, fname)
+                while i >= 0
+                    call remove(tfile, i)
+                    let i = match(tfile, fname, i)
+                endwhile
+                call writefile(tfile, s:tags_file)
+            endif
             exec "silent !ctags -f ".s:tags_file." -a ".fname
         endif
     endif
@@ -55,11 +61,11 @@ fun! s:ProCheckFile(fname)
         endif
         let s:files_dict[fname] = ftime
         call s:ProTagUpdate(fname)
-        call ProSaveFun()
+        call s:ProSaveFun()
     endif
 endfun
 
-fun! ProSaveFun()
+fun! s:ProSaveFun()
     if exists("s:project_file")
         let lines = []
         for i in items(s:files_dict)
@@ -86,7 +92,7 @@ fun! s:ProLoadFun(fname)
 endfun
 command! -nargs=1 ProLoad call s:ProLoadFun(expand("<args>"))
 
-fun! ProUnloadFun()
+fun! s:ProUnloadFun()
     unlet s:project_file s:root_dir s:tags_file s:files_dict
 endfun
 
