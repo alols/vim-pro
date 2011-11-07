@@ -39,9 +39,7 @@ TODO:
 Documentation
 Make paths relative instead of absolute
 Add settings for ctags command line
-Make it easier to add files
-Make it easier to open a project
 Handle if ctags executable is missing
 Handle if a project is loaded that is not a project
-Make the grep match hilight optional
+Make the grep match highlight optional
 Add cscope support
