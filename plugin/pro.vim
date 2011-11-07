@@ -18,7 +18,7 @@ fun! s:ProGrepFun(grepcommand)
         exec "2match Search ".substitute(a:grepcommand, "\\(^/.*/\\).*$", "\\1", "")
     endif
 endfun
-command! -nargs=1 ProGrep call s:ProGrepFun("<args>")
+command! -nargs=1 Pgrep call s:ProGrepFun("<args>")
 
 fun! s:ProTagUpdate(fname)
     if exists("s:tags_file")
@@ -90,11 +90,12 @@ fun! s:ProLoadFun(fname)
         endfor
     endif
 endfun
-command! -nargs=1 ProLoad call s:ProLoadFun(expand("<args>"))
+command! -nargs=1 -complete=file Pload call s:ProLoadFun(expand("<args>"))
 
 fun! s:ProUnloadFun()
     unlet s:project_file s:root_dir s:tags_file s:files_dict
 endfun
+command! Punload call s:ProUnloadFun()
 
 fun! s:ProAddFun(fname)
     if !filereadable(a:fname)
@@ -111,7 +112,7 @@ fun! s:ProAddFun(fname)
     endif
     call s:ProCheckFile(a:fname)
 endfun
-command! -nargs=1 ProAdd call s:ProAddFun(expand("<args>"))
+command! -nargs=1 -complete=file Padd call s:ProAddFun(expand("<args>"))
 
 fun! s:ProRemoveFun(fname)
     if !exists("s:files_dict")
@@ -125,7 +126,7 @@ fun! s:ProRemoveFun(fname)
         call remove(s:files_dict, fname)
     endif
 endfun
-command! -nargs=1 ProRemove call s:ProRemoveFun(expand("<args>"))
+command! -nargs=1 -complete=file Prm call s:ProRemoveFun(expand("<args>"))
 
 fun! s:ProListFiles()
     if !exists("s:files_dict")
@@ -146,9 +147,22 @@ fun! s:ProListFiles()
     endfor
     exec "keepalt silent b ".b
     call setqflist(flist)
-    cw
+    echom "Project files loaded into quickfix list."
 endfun
-command! ProList call s:ProListFiles()
+command! Pls call s:ProListFiles()
+
+fun! s:ProDoFun(command)
+    if !exists("s:files_dict")
+        echohl Error
+        echom "No project file loaded."
+        echohl None
+        return
+    endif
+    for f in keys(s:files_dict)
+        exec a:command.' '.f
+    endfor
+endfun
+command! -nargs=1 Pdo call s:ProDoFun("<args>")
 
 augroup Pro
     au!

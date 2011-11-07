@@ -1,12 +1,47 @@
 Automatically updates tags when saving and provides a project-wide grep
 command.
 
+Summary
+
+:Pload {file}
+        Open or create new project.
+        When a file is written it is automatically added to the project.
+        Tags are automatically updated for all project files.
+
+:Punload
+        Unload project.
+
+:Padd {file}
+        Manually add a file to project.
+        Example:
+            :Padd %
+                Add current file
+
+:Prm {file}
+        Remove file from project.
+
+:Pgrep /{expression}/
+        Perform a vim-grep in all project files.
+
+:Pls
+        Fill quickfix list with all project files.
+        Entries are for line number 1 unless the file is loaded. If the
+        file is loaded the entry is for the line the cursor is on in the
+        buffer.
+
+:Pdo
+        Perform command on all project files. EXPERIMENTAL.
+        Example:
+            :Pdo e
+                Open all project files
+
 TODO:
-Shorter commands?
 Documentation
+Make paths relative instead of absolute
 Add settings for ctags command line
 Make it easier to add files
 Make it easier to open a project
-Tab completion when loading project/adding files?
 Handle if ctags executable is missing
+Handle if a project is loaded that is not a project
+Make the grep match hilight optional
 Add cscope support
