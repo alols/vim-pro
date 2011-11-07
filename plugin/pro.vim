@@ -127,6 +127,29 @@ fun! s:ProRemoveFun(fname)
 endfun
 command! -nargs=1 ProRemove call s:ProRemoveFun(expand("<args>"))
 
+fun! s:ProListFiles()
+    if !exists("s:files_dict")
+        echohl Error
+        echom "No project file loaded."
+        echohl None
+        return
+    endif
+    let flist = []
+    let b = bufnr("%")
+    for f in keys(s:files_dict)
+        if bufexists(f)
+            exec "keepalt silent b ".f
+            call add(flist, {"filename": f, "lnum": line("'\"")})
+        else
+            call add(flist, {"filename": f, "lnum": 1})
+        endif
+    endfor
+    exec "keepalt silent b ".b
+    call setqflist(flist)
+    cw
+endfun
+command! ProList call s:ProListFiles()
+
 augroup Pro
     au!
     autocmd BufWritePost * call s:ProCheckFile(expand("<afile>"))
