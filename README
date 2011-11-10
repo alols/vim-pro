@@ -13,9 +13,12 @@ Summary
 
 :Padd {file}
         Manually add a file to project.
-        Example:
+        Examples:
             :Padd %
                 Add current file
+            :Padd **/*.c **/*.h
+                Recursively add all .c and .h files in current directory and
+                subdirectories.
 
 :Prm {file}
         Remove file from project.
@@ -39,6 +42,7 @@ TODO:
 Documentation
 Make paths relative instead of absolute
 Add settings for ctags command line
+Add support for extra tag files
 Handle if ctags executable is missing
 Handle if a project is loaded that is not a project
 Make the grep match highlight optional

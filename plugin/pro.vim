@@ -1,4 +1,4 @@
-fun! s:ProGrepFun(grepcommand)
+fun! s:GrepFun(grepcommand)
     if !exists("s:files_dict")
         echohl Error
         echom "No project file loaded."
@@ -18,9 +18,9 @@ fun! s:ProGrepFun(grepcommand)
         exec "2match Search ".substitute(a:grepcommand, "\\(^/.*/\\).*$", "\\1", "")
     endif
 endfun
-command! -nargs=1 Pgrep call s:ProGrepFun("<args>")
+command! -nargs=1 Pgrep call s:GrepFun(<q-args>)
 
-fun! s:ProTagUpdate(fname)
+fun! s:TagUpdate(fname)
     if exists("s:tags_file")
         let fname = fnamemodify(a:fname, ":p")
         let ftype = fnamemodify(a:fname, ":e")
@@ -40,7 +40,7 @@ fun! s:ProTagUpdate(fname)
     endif
 endfun
 
-fun! s:ProCheckFile(fname)
+fun! s:CheckFile(fname)
     if exists("s:files_dict")
         let fname = fnamemodify(a:fname, ":p")
         let readable = filereadable(fname)
@@ -60,12 +60,12 @@ fun! s:ProCheckFile(fname)
             return
         endif
         let s:files_dict[fname] = ftime
-        call s:ProTagUpdate(fname)
-        call s:ProSaveFun()
+        call s:TagUpdate(fname)
+        call s:SaveFun()
     endif
 endfun
 
-fun! s:ProSaveFun()
+fun! s:SaveFun()
     if exists("s:project_file")
         let lines = []
         for i in items(s:files_dict)
@@ -75,7 +75,7 @@ fun! s:ProSaveFun()
     endif
 endfun
 
-fun! s:ProLoadFun(fname)
+fun! s:LoadFun(fname)
     let s:project_file = fnamemodify(a:fname, ":p")
     let s:root_dir = fnamemodify(s:project_file, ":p:h")
     let s:tags_file = s:root_dir."/tags"
@@ -86,49 +86,51 @@ fun! s:ProLoadFun(fname)
             let s:files_dict[tokens[0]]=tokens[1]
         endfor
         for k in keys(s:files_dict)
-            call s:ProCheckFile(k)
+            call s:CheckFile(k)
         endfor
     endif
 endfun
-command! -nargs=1 -complete=file Pload call s:ProLoadFun(expand("<args>"))
+command! -nargs=1 -complete=file Pload call s:LoadFun(<q-args>)
 
-fun! s:ProUnloadFun()
+fun! s:UnloadFun()
     unlet s:project_file s:root_dir s:tags_file s:files_dict
 endfun
-command! Punload call s:ProUnloadFun()
+command! Punload call s:UnloadFun()
 
-fun! s:ProAddFun(fname)
+fun! s:AddFun(fname)
     if !filereadable(a:fname)
         echohl Error
-        echom "File does not exist."
+        echom a:fname.": file does not exist."
         echohl None
-        return
+    else
+        call s:CheckFile(a:fname)
     endif
-    if !exists("s:files_dict")
-        echohl Error
-        echom "No project file loaded."
-        echohl None
-        return
-    endif
-    call s:ProCheckFile(a:fname)
 endfun
-command! -nargs=1 -complete=file Padd call s:ProAddFun(expand("<args>"))
 
-fun! s:ProRemoveFun(fname)
-    if !exists("s:files_dict")
-        echohl Error
-        echom "No project file loaded."
-        echohl None
-        return
-    endif
+fun! s:RemoveFun(fname)
     let fname = fnamemodify(a:fname, ":p")
     if has_key(s:files_dict, fname)
         call remove(s:files_dict, fname)
     endif
 endfun
-command! -nargs=1 -complete=file Prm call s:ProRemoveFun(expand("<args>"))
 
-fun! s:ProListFiles()
+fun! s:ExpandFiles(fun, ...)
+    if !exists("s:files_dict")
+        echohl Error
+        echom "No project file loaded."
+        echohl None
+        return
+    endif
+    for a in a:000
+        for f in split(expand(a), '\n')
+            exec "call ".a:fun."(\"".f."\")"
+        endfor
+    endfor
+endfun
+command! -nargs=+ -complete=file Padd call s:ExpandFiles("s:AddFun", <f-args>)
+command! -nargs=+ -complete=file Prm call s:ExpandFiles("s:RemoveFun", <f-args>)
+
+fun! s:ListFiles()
     if !exists("s:files_dict")
         echohl Error
         echom "No project file loaded."
@@ -149,9 +151,9 @@ fun! s:ProListFiles()
     call setqflist(flist)
     echom "Project files loaded into quickfix list."
 endfun
-command! Pls call s:ProListFiles()
+command! Pls call s:ListFiles()
 
-fun! s:ProDoFun(command)
+fun! s:DoFun(command)
     if !exists("s:files_dict")
         echohl Error
         echom "No project file loaded."
@@ -162,10 +164,9 @@ fun! s:ProDoFun(command)
         exec a:command.' '.f
     endfor
 endfun
-command! -nargs=1 Pdo call s:ProDoFun("<args>")
+command! -nargs=1 Pdo call s:DoFun(<q-args>)
 
 augroup Pro
     au!
-    autocmd BufWritePost * call s:ProCheckFile(expand("<afile>"))
+    autocmd BufWritePost * call s:CheckFile(expand("<afile>"))
 augroup END
-
