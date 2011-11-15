@@ -23,7 +23,7 @@ Summary
 :Prm {file}
         Remove file from project.
 
-:Pgrep /{expression}/
+:Pgrep /{pattern}/[g][j]
         Perform a vim-grep in all project files.
 
 :Pls
@@ -40,9 +40,10 @@ Summary
 
 TODO:
 Documentation
-Make paths relative instead of absolute
 Add settings for ctags command line
 Add support for extra tag files
+Filename completion based on project
+Make project file format expandable for the future
 Handle if ctags executable is missing
 Handle if a project is loaded that is not a project
 Make the grep match highlight optional

@@ -1,3 +1,21 @@
+" File: pro.vim
+" Maintainer: Albin Olsson
+
+
+fun! s:ChangeToRootDir()
+    let s:curdir = getcwd()
+    silent! lcd -
+    let s:prevdir = getcwd()
+    exec "lcd ".s:root_dir
+endfun
+
+fun! s:ChangeBackDirs()
+    exec "lcd ".s:prevdir
+    exec "lcd ".s:curdir
+    unlet s:prevdir
+    unlet s:curdir
+endfun
+
 fun! s:GrepFun(grepcommand)
     if !exists("s:files_dict")
         echohl Error
@@ -8,41 +26,42 @@ fun! s:GrepFun(grepcommand)
         echom "No files in project."
         echohl None
     else
+        call s:ChangeToRootDir()
         let grepcommand = "vimgrep ".a:grepcommand.' '.join(keys(s:files_dict), ' ')
         try
             exec grepcommand
+            exec "2match Search ".substitute(a:grepcommand, "\\(^/.*/\\).*$", "\\1", "")
         catch /E480/
             echom "Pattern not found in project"
-            return
         endtry
-        exec "2match Search ".substitute(a:grepcommand, "\\(^/.*/\\).*$", "\\1", "")
+        call s:ChangeBackDirs()
     endif
 endfun
 command! -nargs=1 Pgrep call s:GrepFun(<q-args>)
 
 fun! s:TagUpdate(fname)
     if exists("s:tags_file")
-        let fname = fnamemodify(a:fname, ":p")
         let ftype = fnamemodify(a:fname, ":e")
         " TODO ctags command line depends on filetype
         if ftype == 'c' || ftype == 'h' || ftype == 'cpp' || ftype == 'py' || ftype == 'vim'
             if filereadable(s:tags_file)
                 let tfile = readfile(s:tags_file)
-                let i = match(tfile, fname)
+                let i = match(tfile, a:fname)
                 while i >= 0
                     call remove(tfile, i)
-                    let i = match(tfile, fname, i)
+                    let i = match(tfile, a:fname, i)
                 endwhile
                 call writefile(tfile, s:tags_file)
             endif
-            exec "silent !ctags -f ".s:tags_file." -a ".fname
+            exec "silent !ctags -f ".s:tags_file." -a ".a:fname
         endif
     endif
 endfun
 
 fun! s:CheckFile(fname)
     if exists("s:files_dict")
-        let fname = fnamemodify(a:fname, ":p")
+        call s:ChangeToRootDir()
+        let fname = fnamemodify(a:fname, ":.")
         let readable = filereadable(fname)
         let ftime = getftime(fname)
         if has_key(s:files_dict, fname)
@@ -50,18 +69,22 @@ fun! s:CheckFile(fname)
                 if s:files_dict[fname] == ftime
                     " fname is already part of project
                     " and is unmodified
+                    call s:ChangeBackDirs()
                     return
                 endif
             else
                 call remove(s:files_dict, fname)
+                call s:ChangeBackDirs()
                 return
             endif
         elseif !readable
+            call s:ChangeBackDirs()
             return
         endif
         let s:files_dict[fname] = ftime
         call s:TagUpdate(fname)
         call s:SaveFun()
+        call s:ChangeBackDirs()
     endif
 endfun
 
@@ -108,10 +131,12 @@ fun! s:AddFun(fname)
 endfun
 
 fun! s:RemoveFun(fname)
-    let fname = fnamemodify(a:fname, ":p")
+    call s:ChangeToRootDir()
+    let fname = fnamemodify(a:fname, ":.")
     if has_key(s:files_dict, fname)
         call remove(s:files_dict, fname)
     endif
+    call s:ChangeBackDirs()
 endfun
 
 fun! s:ExpandFiles(fun, ...)
@@ -139,6 +164,7 @@ fun! s:ListFiles()
     endif
     let flist = []
     let b = bufnr("%")
+    call s:ChangeToRootDir()
     for f in keys(s:files_dict)
         if bufexists(f)
             exec "keepalt silent b ".f
@@ -150,6 +176,7 @@ fun! s:ListFiles()
     exec "keepalt silent b ".b
     call setqflist(flist)
     echom "Project files loaded into quickfix list."
+    call s:ChangeBackDirs()
 endfun
 command! Pls call s:ListFiles()
 
@@ -160,11 +187,30 @@ fun! s:DoFun(command)
         echohl None
         return
     endif
+    call s:ChangeToRootDir()
     for f in keys(s:files_dict)
         exec a:command.' '.f
     endfor
+    call s:ChangeBackDirs()
 endfun
 command! -nargs=1 Pdo call s:DoFun(<q-args>)
+
+fun! s:PComplete(Lead, Line, Pos)
+    echom a:Lead
+    if !exists("s:files_dict")
+        return []
+    else
+        let rval = []
+        for f in keys(s:files_dict)
+            let fname = fnamemodify(f, ":t")
+            if 0 == stridx(fname, a:Lead)
+                call add(rval, fname)
+            endif
+        endfor
+        return rval
+    endif
+endfun
+command! -nargs=+ -complete=customlist,s:PComplete Pe e <args>
 
 augroup Pro
     au!
