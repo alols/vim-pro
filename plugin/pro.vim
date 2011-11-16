@@ -101,7 +101,7 @@ endfun
 fun! s:LoadFun(fname)
     let s:project_file = fnamemodify(a:fname, ":p")
     let s:root_dir = fnamemodify(s:project_file, ":p:h")
-    let s:tags_file = s:root_dir."/tags"
+    let s:tags_file = s:project_file.".tags"
     let s:files_dict = {}
     if filereadable(s:project_file)
         for line in readfile(s:project_file)
@@ -153,7 +153,7 @@ fun! s:ExpandFiles(fun, ...)
     endfor
 endfun
 command! -nargs=+ -complete=file Padd call s:ExpandFiles("s:AddFun", <f-args>)
-command! -nargs=+ -complete=file Prm call s:ExpandFiles("s:RemoveFun", <f-args>)
+command! -nargs=+ -complete=customlist,s:PComplete Prm call s:ExpandFiles("s:RemoveFun", <f-args>)
 
 fun! s:ListFiles()
     if !exists("s:files_dict")
@@ -202,9 +202,8 @@ fun! s:PComplete(Lead, Line, Pos)
     else
         let rval = []
         for f in keys(s:files_dict)
-            let fname = fnamemodify(f, ":t")
-            if 0 == stridx(fname, a:Lead)
-                call add(rval, fname)
+            if -1 != stridx(f, a:Lead)
+                call add(rval, f)
             endif
         endfor
         return rval

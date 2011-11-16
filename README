@@ -9,7 +9,7 @@ Summary
         Tags are automatically updated for all project files.
 
 :Punload
-        Unload project.
+        Unload project. (It is never necessary to call this function)
 
 :Padd {file}
         Manually add a file to project.
@@ -25,6 +25,10 @@ Summary
 
 :Pgrep /{pattern}/[g][j]
         Perform a vim-grep in all project files.
+
+:Pe {file}
+        Like :e, only :Pe tab-completes the filename with files
+        belonging to the project.
 
 :Pls
         Fill quickfix list with all project files.
@@ -42,7 +46,6 @@ TODO:
 Documentation
 Add settings for ctags command line
 Add support for extra tag files
-Filename completion based on project
 Make project file format expandable for the future
 Handle if ctags executable is missing
 Handle if a project is loaded that is not a project
