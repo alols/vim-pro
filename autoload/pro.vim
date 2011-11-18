@@ -117,7 +117,6 @@ fun! pro#LoadFun(fname)
             let {s:PScope}:files_dict[tokens[0]]=tokens[1]
         endfor
         call pro#CheckFiles(keys({s:PScope}:files_dict))
-        redraw
     endif
 endfun
 
@@ -143,7 +142,6 @@ fun! pro#AddFun(...)
         endfor
     endfor
     call pro#CheckFiles(checkfiles)
-    redraw!
 endfun
 
 fun! pro#RemoveFun(...)
@@ -212,3 +210,4 @@ fun! pro#PComplete(Lead, Line, Pos)
         return rval
     endif
 endfun
+
