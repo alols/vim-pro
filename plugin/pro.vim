@@ -64,8 +64,9 @@ endfun
 
 fun! s:CheckFile(fname)
     if exists("{s:PScope}:files_dict")
+        let fname = fnamemodify(a:fname, ":p")
         call s:ChangeToRootDir()
-        let fname = fnamemodify(a:fname, ":.")
+        let fname = fnamemodify(fname, ":.")
         let readable = filereadable(fname)
         let ftime = getftime(fname)
         if has_key({s:PScope}:files_dict, fname)
@@ -138,10 +139,10 @@ endfun
 fun! s:RemoveFun(fname)
     call s:ChangeToRootDir()
     let fname = fnamemodify(a:fname, ":.")
+    call s:ChangeBackDirs()
     if has_key({s:PScope}:files_dict, fname)
         call remove({s:PScope}:files_dict, fname)
     endif
-    call s:ChangeBackDirs()
 endfun
 
 fun! s:ExpandFiles(fun, ...)
@@ -153,12 +154,13 @@ fun! s:ExpandFiles(fun, ...)
     endif
     for a in a:000
         for f in split(expand(a), '\n')
-            exec "call ".a:fun."(\"".f."\")"
+            "exec "call ".a:fun."(\"".f."\")"
+            call a:fun(f)
         endfor
     endfor
 endfun
-command! -nargs=+ -complete=file Padd call s:ExpandFiles("s:AddFun", <f-args>)
-command! -nargs=+ -complete=customlist,s:PComplete Prm call s:ExpandFiles("s:RemoveFun", <f-args>)
+command! -nargs=+ -complete=file Padd call s:ExpandFiles(function("s:AddFun"), <f-args>)
+command! -nargs=+ -complete=customlist,s:PComplete Prm call s:ExpandFiles(function("s:RemoveFun"), <f-args>)
 
 fun! s:ListFiles()
     if !exists("{s:PScope}:files_dict")
@@ -208,6 +210,10 @@ fun! s:PComplete(Lead, Line, Pos)
         let rval = []
         for f in keys({s:PScope}:files_dict)
             if -1 != stridx(f, a:Lead)
+                call s:ChangeToRootDir()
+                let f = fnamemodify(f, ":p")
+                call s:ChangeBackDirs()
+                let f = fnamemodify(f, ":.")
                 call add(rval, f)
             endif
         endfor
