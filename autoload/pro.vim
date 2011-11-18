@@ -38,51 +38,60 @@ fun! pro#GrepFun(grepcommand)
     endif
 endfun
 
-fun! pro#TagUpdate(fname)
-    if exists("{s:PScope}:tags_file")
-        call pro#ChangeToRootDir()
-        let ftype = fnamemodify(a:fname, ":e")
-        " TODO ctags command line depends on filetype
-        if ftype == 'c' || ftype == 'h' || ftype == 'cpp' || ftype == 'py' || ftype == 'vim'
-            if filereadable({s:PScope}:tags_file)
-                let tfile = readfile({s:PScope}:tags_file)
-                let i = match(tfile, a:fname)
-                while i >= 0
-                    call remove(tfile, i)
-                    let i = match(tfile, a:fname, i)
-                endwhile
-                call writefile(tfile, {s:PScope}:tags_file)
-            endif
-            exec "silent !ctags -f ".{s:PScope}:tags_file." -a ".a:fname
-        endif
-        call pro#ChangeBackDirs()
-    endif
-endfun
-
-fun! pro#CheckFile(fname, add)
+fun! pro#CheckFiles(fnames)
     if exists("{s:PScope}:files_dict")
-        let fname = fnamemodify(a:fname, ":p")
-        call pro#ChangeToRootDir()
-        let fname = fnamemodify(fname, ":.")
-        let readable = filereadable(fname)
-        let ftime = getftime(fname)
-        call pro#ChangeBackDirs()
-        if has_key({s:PScope}:files_dict, fname)
-            if readable
-                if {s:PScope}:files_dict[fname] == ftime
-                    " fname is already part of project
-                    " and is unmodified
-                    return
+        let update_dict = {}   " files to update in tag file ordered by extensions
+        let tfile = []         " this variable will hold the tag file if we need to open it
+        for fname in a:fnames
+            let fname = fnamemodify(fname, ":p")
+            call pro#ChangeToRootDir()
+            let fname = fnamemodify(fname, ":.")
+            let readable = filereadable(fname)
+            let ftime = getftime(fname)
+            call pro#ChangeBackDirs()
+            if has_key({s:PScope}:files_dict, fname)
+                if readable
+                    if {s:PScope}:files_dict[fname] == ftime
+                        " fname is already part of project
+                        " and is unmodified
+                        continue
+                    endif
+                else
+                    call remove({s:PScope}:files_dict, fname)
+                    continue
                 endif
-            else
-                call remove({s:PScope}:files_dict, fname)
-                return
+            elseif !readable || !a:add
+                continue
             endif
-        elseif !readable || !a:add
-            return
+            let {s:PScope}:files_dict[fname] = ftime
+            let ext = fnamemodify(fname, ":e")
+            if ext == 'c' || ext == 'h' || ext == 'cpp' || ext == 'py' || ext == 'vim'
+                if !has_key(update_dict, ext)
+                    let update_dict[ext] = [fname]
+                else
+                    call add(update_dict[ext], fname)
+                endif
+                if filereadable({s:PScope}:tags_file)
+                    if empty(tfile)
+                        let tfile = readfile({s:PScope}:tags_file)
+                    endif
+                    let i = match(tfile, fname)
+                    while i >= 0
+                        call remove(tfile, i)
+                        let i = match(tfile, fname, i)
+                    endwhile
+                endif
+            endif
+        endfor
+        if !empty(tfile)
+            call writefile(tfile, {s:PScope}:tags_file)
         endif
-        let {s:PScope}:files_dict[fname] = ftime
-        call pro#TagUpdate(fname)
+        call pro#ChangeToRootDir()
+        for ext in keys(update_dict)
+            " TODO ctags command line depends on filetype
+            exec "silent !ctags -f ".{s:PScope}:tags_file." -a ".join(update_dict[ext], " ")
+        endfor
+        call pro#ChangeBackDirs()
         call pro#SaveFun()
     endif
 endfun
@@ -107,9 +116,8 @@ fun! pro#LoadFun(fname)
             let tokens = split(line, "\t")
             let {s:PScope}:files_dict[tokens[0]]=tokens[1]
         endfor
-        for k in keys({s:PScope}:files_dict)
-            call pro#CheckFile(k, 0)
-        endfor
+        call pro#CheckFiles(keys({s:PScope}:files_dict))
+        redraw
     endif
 endfun
 
@@ -118,31 +126,36 @@ fun! pro#UnloadFun()
                 \ {s:PScope}:tags_file {s:PScope}:files_dict
 endfun
 
-fun! pro#AddFun(fname)
-    if !filereadable(a:fname)
-        echoerr a:fname.": file does not exist."
-    else
-        call pro#CheckFile(a:fname, 1)
-    endif
-endfun
-
-fun! pro#RemoveFun(fname)
-    call pro#ChangeToRootDir()
-    let fname = fnamemodify(a:fname, ":.")
-    call pro#ChangeBackDirs()
-    if has_key({s:PScope}:files_dict, fname)
-        call remove({s:PScope}:files_dict, fname)
-    endif
-endfun
-
-fun! pro#ExpandFiles(fun, ...)
-    if !exists("{s:PScope}:files_dict")
-        echoerr "No project file loaded."
-        return
-    endif
+fun! pro#AddFun(...)
+    let checkfiles = []
     for a in a:000
         for f in split(expand(a), '\n')
-            silent! call a:fun(f)
+            if !filereadable(f)
+                echoerr f.": file does not exist."
+            else
+                let fname = fnamemodify(f, ":p")
+                call pro#ChangeToRootDir()
+                let fname = fnamemodify(fname, ":.")
+                call pro#ChangeBackDirs()
+                let {s:PScope}:files_dict[fname]=0
+                call add(checkfiles, fname)
+            endif
+        endfor
+    endfor
+    call pro#CheckFiles(checkfiles)
+    redraw!
+endfun
+
+fun! pro#RemoveFun(...)
+    for a in a:000
+        for f in split(expand(a), '\n')
+            let fname = fnamemodify(f, ":p")
+            call pro#ChangeToRootDir()
+            let fname = fnamemodify(fname, ":.")
+            call pro#ChangeBackDirs()
+            if has_key({s:PScope}:files_dict, fname)
+                call remove({s:PScope}:files_dict, fname)
+            endif
         endfor
     endfor
 endfun
