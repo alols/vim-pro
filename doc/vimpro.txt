@@ -46,12 +46,14 @@ vimpro requires Exuberant Ctags to be installed and in your path.
 			files belonging to the project.
 
 							*:Pe*
-:Pe {file}		Edit {file}.
+:Pe [++opt] [+cmd] {file}
+			Edit {file}.
 			This command has special command complete
 			function that behaves a lot like |:buffer|,
 			but project files are used for complete
 			suggestions instead.
 			Also see |wildmode| and |wildchar|.
+			Also see |++opt| and |+cmd|.
 
 							*:Pload*
 :Pload {file}		Load project {file}.

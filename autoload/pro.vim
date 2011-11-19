@@ -207,28 +207,6 @@ fun! pro#RemoveFun(...)
     call pro#SaveFun()
 endfun
 
-fun! pro#ListFiles()
-    if !exists("{s:PScope}:files_dict")
-        echoerr "No project file loaded."
-        return
-    endif
-    let flist = []
-    let b = bufnr("%")
-    call pro#ChangeToRootDir()
-    for f in keys({s:PScope}:files_dict)
-        if bufexists(f)
-            exec "keepalt silent b ".f
-            call add(flist, {"filename": f, "lnum": line("'\"")})
-        else
-            call add(flist, {"filename": f, "lnum": 1})
-        endif
-    endfor
-    exec "keepalt silent b ".b
-    call setqflist(flist)
-    echom "Project files loaded into quickfix list."
-    call pro#ChangeBackDirs()
-endfun
-
 fun! pro#PComplete(Lead, Line, Pos)
     echom a:Lead
     if !exists("{s:PScope}:files_dict")

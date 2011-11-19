@@ -9,7 +9,6 @@ command! -nargs=+ -complete=customlist,pro#PComplete Prm call pro#RemoveFun(<f-a
 command! Punload call pro#UnloadFun()
 command! -nargs=+ -complete=customlist,pro#PComplete Pe e <args>
 command! -nargs=1 Pgrep call pro#GrepFun(<q-args>)
-command! Pls call pro#ListFiles()
 
 augroup Pro
     au!
