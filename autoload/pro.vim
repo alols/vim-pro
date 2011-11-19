@@ -65,9 +65,7 @@ fun! pro#CheckFiles(fnames)
                     continue
                 endif
             else
-                " file does not exist, remove it from project
-                call remove({s:PScope}:files_dict, fname)
-                " TODO remove tags!!!
+                " file does not seem to exist, ignore it
                 continue
             endif
         else
@@ -120,12 +118,23 @@ fun! pro#SaveFun()
     endif
 endfun
 
+fun! pro#CreateFun(fname)
+    if filereadable(a:fname)
+        echoerr "A file with that name already exists."
+    else
+        call writefile(["!_VIMPRO_FILE_VERSION\t0\t1"], a:fname)
+        call pro#LoadFun(a:fname)
+    endif
+endfun
+
 fun! pro#LoadFun(fname)
-    let {s:PScope}:project_file = fnamemodify(a:fname, ":p")
-    let {s:PScope}:root_dir = fnamemodify({s:PScope}:project_file, ":p:h")
-    let {s:PScope}:tags_file = {s:PScope}:project_file.".tags"
-    let {s:PScope}:files_dict = {}
-    if filereadable({s:PScope}:project_file)
+    if !filereadable(a:fname)
+        echoerr "No such file."
+    else
+        let {s:PScope}:project_file = fnamemodify(a:fname, ":p")
+        let {s:PScope}:root_dir = fnamemodify({s:PScope}:project_file, ":p:h")
+        let {s:PScope}:tags_file = {s:PScope}:project_file.".tags"
+        let {s:PScope}:files_dict = {}
         try
             let file = readfile({s:PScope}:project_file)
             let file_ver = split(file[0], "\t")
@@ -147,9 +156,9 @@ fun! pro#LoadFun(fname)
             echoerr "Error loading project file. ".v:exception
             return
         endtry
-    endif
-    if -1 == stridx(&tags, {s:PScope}:tags_file)
-        exec "set tags=".{s:PScope}:tags_file.",".&tags
+        if -1 == stridx(&tags, {s:PScope}:tags_file)
+            exec "set tags=".{s:PScope}:tags_file.",".&tags
+        endif
     endif
 endfun
 
