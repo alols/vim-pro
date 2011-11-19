@@ -48,24 +48,30 @@ fun! pro#CheckFiles(fnames)
     for fname in a:fnames
         let fname = fnamemodify(fname, ":p")
         call pro#ChangeToRootDir()
+        " get the filename relative to project root
         let fname = fnamemodify(fname, ":.")
+        " check if the file exists
         let readable = filereadable(fname)
+        " check when it was modified
         let ftime = getftime(fname)
         call pro#ChangeBackDirs()
         if has_key({s:PScope}:files_dict, fname)
             if readable
                 if {s:PScope}:files_dict[fname] == ftime
-                    " fname is already part of project
+                    " file is already part of project
                     " and is unmodified
                     continue
                 endif
             else
+                " file does not exist, remove it from project
                 call remove({s:PScope}:files_dict, fname)
                 continue
             endif
         else
+            " file is not part of project, skip it
             continue
         endif
+        " save timestamp
         let {s:PScope}:files_dict[fname] = ftime
         let ext = fnamemodify(fname, ":e")
         if ext == 'c' || ext == 'h' || ext == 'cpp' || ext == 'py' || ext == 'vim'
