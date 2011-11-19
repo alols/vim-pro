@@ -14,6 +14,5 @@ command! Pls call pro#ListFiles()
 augroup Pro
     au!
     autocmd BufWritePost * call pro#CheckFiles([expand("<afile>")])
-    autocmd TabEnter * if exists("t:tags_file") |exec "set tags=".t:tags_file |endif
 augroup END
 

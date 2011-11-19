@@ -3,9 +3,10 @@
 " URL: https://github.com/alols/vim-pro
 "
 
-" project is local to tab page, change this
-" to 'g' to make project global
-let s:PScope='t'
+" project scope is global, change this to 't'
+" to make it local to tab page
+" (EXPERIMENTAL, do not use!!!)
+let s:PScope='g'
 
 let s:TagExt = {}
 let s:TagExt['c'] = ''
@@ -136,9 +137,17 @@ fun! pro#LoadFun(fname)
         endfor
         call pro#CheckFiles(keys({s:PScope}:files_dict))
     endif
+    if -1 == stridx(&tags, {s:PScope}:project_file)
+        exec "set tags=".{s:PScope}:project_file.",".&tags
+    endif
 endfun
 
 fun! pro#UnloadFun()
+    let beg = stridx(&tags, {s:PScope}:project_file)
+    if beg != -1
+        let end = 1+stridx(&tags, ",", beg)
+        exec "set tags=".strpart(&tags, 0, beg).strpart(&tags, end)
+    endif
     unlet {s:PScope}:project_file {s:PScope}:root_dir
                 \ {s:PScope}:tags_file {s:PScope}:files_dict
 endfun
