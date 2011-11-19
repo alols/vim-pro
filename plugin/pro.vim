@@ -1,5 +1,6 @@
 " File: plugin/pro.vim
-" Maintainer: Albin Olsson
+" Author: Albin Olsson
+" URL: https://github.com/alols/vim-pro
 "
 
 command! -nargs=1 -complete=file Pload call pro#LoadFun(<q-args>) |call garbagecollect() |redraw!
@@ -14,5 +15,6 @@ command! -nargs=1 Pdo call pro#DoFun(<q-args>)
 augroup Pro
     au!
     autocmd BufWritePost * call pro#CheckFiles([expand("<afile>")])
+    autocmd TabEnter * if exists("t:tags_file") |exec "set tags=".t:tags_file |endif
 augroup END
 

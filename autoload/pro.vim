@@ -1,5 +1,6 @@
 " File: autoload/pro.vim
-" Maintainer: Albin Olsson
+" Author: Albin Olsson
+" URL: https://github.com/alols/vim-pro
 "
 
 " project is local to tab page, change this
@@ -39,61 +40,62 @@ fun! pro#GrepFun(grepcommand)
 endfun
 
 fun! pro#CheckFiles(fnames)
-    if exists("{s:PScope}:files_dict")
-        let update_dict = {}   " files to update in tag file ordered by extensions
-        let tfile = []         " this variable will hold the tag file if we need to open it
-        for fname in a:fnames
-            let fname = fnamemodify(fname, ":p")
-            call pro#ChangeToRootDir()
-            let fname = fnamemodify(fname, ":.")
-            let readable = filereadable(fname)
-            let ftime = getftime(fname)
-            call pro#ChangeBackDirs()
-            if has_key({s:PScope}:files_dict, fname)
-                if readable
-                    if {s:PScope}:files_dict[fname] == ftime
-                        " fname is already part of project
-                        " and is unmodified
-                        continue
-                    endif
-                else
-                    call remove({s:PScope}:files_dict, fname)
+    if !exists("{s:PScope}:files_dict")
+        return
+    endif
+    let update_dict = {}   " files to update in tag file ordered by extensions
+    let tfile = []         " this variable will hold the tag file if we need to open it
+    for fname in a:fnames
+        let fname = fnamemodify(fname, ":p")
+        call pro#ChangeToRootDir()
+        let fname = fnamemodify(fname, ":.")
+        let readable = filereadable(fname)
+        let ftime = getftime(fname)
+        call pro#ChangeBackDirs()
+        if has_key({s:PScope}:files_dict, fname)
+            if readable
+                if {s:PScope}:files_dict[fname] == ftime
+                    " fname is already part of project
+                    " and is unmodified
                     continue
                 endif
-            elseif !readable || !a:add
+            else
+                call remove({s:PScope}:files_dict, fname)
                 continue
             endif
-            let {s:PScope}:files_dict[fname] = ftime
-            let ext = fnamemodify(fname, ":e")
-            if ext == 'c' || ext == 'h' || ext == 'cpp' || ext == 'py' || ext == 'vim'
-                if !has_key(update_dict, ext)
-                    let update_dict[ext] = [fname]
-                else
-                    call add(update_dict[ext], fname)
-                endif
-                if filereadable({s:PScope}:tags_file)
-                    if empty(tfile)
-                        let tfile = readfile({s:PScope}:tags_file)
-                    endif
-                    let i = match(tfile, fname)
-                    while i >= 0
-                        call remove(tfile, i)
-                        let i = match(tfile, fname, i)
-                    endwhile
-                endif
-            endif
-        endfor
-        if !empty(tfile)
-            call writefile(tfile, {s:PScope}:tags_file)
+        else
+            continue
         endif
-        call pro#ChangeToRootDir()
-        for ext in keys(update_dict)
-            " TODO ctags command line depends on filetype
-            exec "silent !ctags -f ".{s:PScope}:tags_file." -a ".join(update_dict[ext], " ")
-        endfor
-        call pro#ChangeBackDirs()
-        call pro#SaveFun()
+        let {s:PScope}:files_dict[fname] = ftime
+        let ext = fnamemodify(fname, ":e")
+        if ext == 'c' || ext == 'h' || ext == 'cpp' || ext == 'py' || ext == 'vim'
+            if !has_key(update_dict, ext)
+                let update_dict[ext] = [fname]
+            else
+                call add(update_dict[ext], fname)
+            endif
+            if filereadable({s:PScope}:tags_file)
+                if empty(tfile)
+                    let tfile = readfile({s:PScope}:tags_file)
+                endif
+                let i = match(tfile, fname)
+                while i >= 0
+                    call remove(tfile, i)
+                    let i = match(tfile, fname, i)
+                endwhile
+            endif
+        endif
+    endfor
+    if !empty(tfile)
+        call writefile(tfile, {s:PScope}:tags_file)
     endif
+    call pro#ChangeToRootDir()
+    for ext in keys(update_dict)
+        " TODO ctags command line depends on filetype
+        exec "silent !ctags -f ".{s:PScope}:tags_file." -a ".join(update_dict[ext], " ")
+    endfor
+    call pro#ChangeBackDirs()
+    call pro#SaveFun()
 endfun
 
 fun! pro#SaveFun()
@@ -126,6 +128,10 @@ fun! pro#UnloadFun()
 endfun
 
 fun! pro#AddFun(...)
+    if !exists("{s:PScope}:files_dict")
+        echoerr "No project file loaded."
+        return
+    endif
     let checkfiles = []
     for a in a:000
         for f in split(expand(a), '\n')
@@ -145,6 +151,13 @@ fun! pro#AddFun(...)
 endfun
 
 fun! pro#RemoveFun(...)
+    if !exists("{s:PScope}:files_dict")
+        echoerr "No project file loaded."
+        return
+    endif
+    if filereadable({s:PScope}:tags_file)
+        let tfile = readfile({s:PScope}:tags_file)
+    endif
     for a in a:000
         for f in split(expand(a), '\n')
             let fname = fnamemodify(f, ":p")
@@ -154,8 +167,19 @@ fun! pro#RemoveFun(...)
             if has_key({s:PScope}:files_dict, fname)
                 call remove({s:PScope}:files_dict, fname)
             endif
+            if exists("tfile")
+                let i = match(tfile, fname)
+                while i >= 0
+                    call remove(tfile, i)
+                    let i = match(tfile, fname, i)
+                endwhile
+            endif
         endfor
     endfor
+    if exists("tfile")
+        call writefile(tfile, {s:PScope}:tags_file)
+    endif
+    call pro#SaveFun()
 endfun
 
 fun! pro#ListFiles()
