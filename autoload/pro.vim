@@ -8,13 +8,6 @@
 " (EXPERIMENTAL, do not use!!!)
 let s:PScope='g'
 
-let s:TagExt = {}
-let s:TagExt['c'] = ''
-let s:TagExt['h'] = '--extra=+fq'
-let s:TagExt['cpp'] = '--extra=+q'
-let s:TagExt['py'] = ''
-let s:TagExt['vim'] = ''
-
 fun! pro#ChangeToRootDir()
     let s:curdir = getcwd()
     silent! lcd -
@@ -39,7 +32,8 @@ fun! pro#GrepFun(grepcommand)
         let grepcommand = "vimgrep ".a:grepcommand.' '.join(keys({s:PScope}:files_dict), ' ')
         try
             exec grepcommand
-            exec "2match Search ".substitute(a:grepcommand, "\\(^/.*/\\).*$", "\\1", "")
+            " will highlight the matches
+            " exec "2match Search ".substitute(a:grepcommand, "\\(^/.*/\\).*$", "\\1", "")
         catch /E480/
             echom "Pattern not found in project"
         endtry
@@ -83,22 +77,20 @@ fun! pro#CheckFiles(fnames)
         " save timestamp
         let {s:PScope}:files_dict[fname] = ftime
         let ext = fnamemodify(fname, ":e")
-        if has_key(s:TagExt, ext)
-            if !has_key(update_dict, ext)
-                let update_dict[ext] = [fname]
-            else
-                call add(update_dict[ext], fname)
+        if !has_key(update_dict, ext)
+            let update_dict[ext] = [fname]
+        else
+            call add(update_dict[ext], fname)
+        endif
+        if filereadable({s:PScope}:tags_file)
+            if empty(tfile)
+                let tfile = readfile({s:PScope}:tags_file)
             endif
-            if filereadable({s:PScope}:tags_file)
-                if empty(tfile)
-                    let tfile = readfile({s:PScope}:tags_file)
-                endif
-                let i = match(tfile, fname)
-                while i >= 0
-                    call remove(tfile, i)
-                    let i = match(tfile, fname, i)
-                endwhile
-            endif
+            let i = match(tfile, fname)
+            while i >= 0
+                call remove(tfile, i)
+                let i = match(tfile, fname, i)
+            endwhile
         endif
     endfor
     if !empty(tfile)
@@ -107,8 +99,10 @@ fun! pro#CheckFiles(fnames)
     call pro#ChangeToRootDir()
     for ext in keys(update_dict)
         " TODO ctags command line depends on filetype
-        if has_key(s:TagExt, ext)
-            exec "silent !ctags -f ".{s:PScope}:tags_file." -a "s:TagExt[ext]." ".join(update_dict[ext], " ")
+        if has_key(g:PTagExt, ext)
+            exec "silent !ctags -f ".{s:PScope}:tags_file." -a "g:PTagExt[ext]." ".join(update_dict[ext], " ")
+        else
+            exec "silent !ctags -f ".{s:PScope}:tags_file." -a ".join(update_dict[ext], " ")
         endif
     endfor
     call pro#ChangeBackDirs()
@@ -137,13 +131,13 @@ fun! pro#LoadFun(fname)
         endfor
         call pro#CheckFiles(keys({s:PScope}:files_dict))
     endif
-    if -1 == stridx(&tags, {s:PScope}:project_file)
-        exec "set tags=".{s:PScope}:project_file.",".&tags
+    if -1 == stridx(&tags, {s:PScope}:tags_file)
+        exec "set tags=".{s:PScope}:tags_file.",".&tags
     endif
 endfun
 
 fun! pro#UnloadFun()
-    let beg = stridx(&tags, {s:PScope}:project_file)
+    let beg = stridx(&tags, {s:PScope}:tags_file)
     if beg != -1
         let end = 1+stridx(&tags, ",", beg)
         exec "set tags=".strpart(&tags, 0, beg).strpart(&tags, end)
