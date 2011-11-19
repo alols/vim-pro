@@ -10,6 +10,7 @@ For Vim version 7.3 and above.
 1. Overview		|pro-overview|
 2. Dependencies		|pro-dependencies|
 3. Commands		|pro-commands|
+4. TODO			|pro-todo|
 
 ==============================================================================
 1. Overview					*pro-overview*
@@ -23,8 +24,8 @@ It comes with the following features:
 	* A project-wide grep command that makes it easy to search for
 	  occurrences inside project files.
 	* An equivalent of :e that makes it very easy to open files
-	  belonging to the project
-	* It is very easy to add files to the project
+	  belonging to the project.
+	* It is very easy to add files to the project.
 
 ==============================================================================
 2. Dependencies					*pro-dependencies*
@@ -72,3 +73,14 @@ vimpro requires Exuberant Ctags to be installed and in your path.
 			It is never strictly necessary to call this
 			command. It will unload the project and change the
 			|tags-option| to not include the project tag file.
+
+==============================================================================
+1. TODO						*pro-todo*
+
+	* Add settings for ctags command line.
+	* Make project file format expandable for the future.
+	* Handle if ctags executable is missing.
+	* Handle if a project is loaded that is not a project.
+	* Make the grep match highlight optional.
+	* Add cscope support.
+
