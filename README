@@ -1,51 +1,21 @@
-Automatically updates tags when saving and provides a project-wide grep
-command.
+vimpro
 
-Summary
+Author: Albin Olsson
 
-:Pload {file}
-        Open or create new project.
-        When a file is written it is automatically added to the project.
-        Tags are automatically updated for all project files.
+This scripts adds the concept of projects to Vim. It was written with
+software projects in mind, but might be useful for other purposes as well.
+It comes with the following features:
 
-:Punload
-        Unload project. (It is never necessary to call this function)
-
-:Padd {file}
-        Manually add a file to project.
-        Examples:
-            :Padd %
-                Add current file
-            :Padd **/*.c **/*.h
-                Recursively add all .c and .h files in current directory and
-                subdirectories.
-
-:Prm {file}
-        Remove file from project.
-
-:Pgrep /{pattern}/[g][j]
-        Perform a vim-grep in all project files.
-
-:Pe {file}
-        Like :e, only :Pe tab-completes the filename with files
-        belonging to the project.
-
-:Pls
-        Fill quickfix list with all project files.
-        Entries are for line number 1 unless the file is loaded. If the
-        file is loaded the entry is for the line the cursor is on in the
-        buffer.
-
-:Pdo
-        Perform command on all project files. EXPERIMENTAL.
-        Example:
-            :Pdo e
-                Open all project files
+	* Automatic tag management, add your files to the project and tags
+	  will *just work*.
+	* A project-wide grep command that makes it easy to search for
+	  occurrences inside project files.
+	* An equivalent of :e that makes it very easy to open files
+	  belonging to the project
+	* It is very easy to add files to the project
 
 TODO:
-Documentation
 Add settings for ctags command line
-Add support for extra tag files
 Make project file format expandable for the future
 Handle if ctags executable is missing
 Handle if a project is loaded that is not a project
