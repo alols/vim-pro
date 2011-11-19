@@ -1,0 +1,81 @@
+*vimpro.txt*	Plug-in for easy navigation of software projects
+*vimpro*
+
+Author: Albin Olsson
+
+For Vim version 7.3 and above.
+
+==============================================================================
+
+1. Overview		|pro-overview|
+2. Dependencies		|pro-dependencies|
+3. Commands		|pro-commands|
+
+2. Downloads                                    |pro-download|
+3. Installation                                 |pro-installation|
+4. Options                                      |pro-options|
+5. Features                                     |pro-features|
+6. Limitations                                  |pro-limitations|
+7. FAQ & TIPS                                   |pro-faq|
+8. History                                      |pro-history|
+9. Thanks                                       |pro-thanks|
+
+==============================================================================
+1. Overview					*pro-overview*
+
+This scripts adds the concept of projects to Vim. It was written with
+software projects in mind, but might be useful for other purposes as well.
+It comes with the following features:
+
+	* Automatic tag management, add your files to the project and tags
+	  will *just work*.
+	* A project-wide grep command that makes it easy to search for
+	  occurrences inside project files.
+	* An equivalent of :e that makes it very easy to open files
+	  belonging to the project
+	* It is very easy to add files to the project
+
+==============================================================================
+2. Dependencies					*pro-dependencies*
+
+vimpro requires Exuberant Ctags to be installed and in your path.
+
+==============================================================================
+3. Commands					*pro-commands*
+
+							*:Padd*
+:Padd {file} ...	Add {file} to project.
+			Multiple filenames are allowed. It is possible
+			to use |wildcards|.
+
+							*:Pgrep*
+:Pgrep /{pattern}/[g][j]
+			Works exactly like |:vimgrep| but takes no file
+			argument, instead the grep is performed in all
+			files belonging to the project.
+
+							*:Pe*
+:Pe {file}		Edit {file}.
+			This command has special command complete
+			function that behaves a lot like |:buffer|,
+			but project files are used for complete
+			suggestions instead.
+			Also see |wildmode| and |wildchar|.
+
+							*:Pload*
+:Pload {file}		Load project {file}.
+			If the project does not exist it is created.
+			This will change the |tags-option| to include the
+			project tag file.
+
+							*:Prm*
+:Prm {file} ...		Remove {file} from project.
+			Multiple filenames are allowed. Uses the same
+			complete functions as |:Pe|. It is possible to use
+			|wildcards|.
+
+							*:Punload*
+:Punload {file}		Unload project {file}.
+			It is never strictly necessary to call this
+			command. It will unload the project and change the
+			|tags-option| to not include the project tag file.
