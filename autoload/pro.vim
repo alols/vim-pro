@@ -7,6 +7,13 @@
 " to 'g' to make project global
 let s:PScope='t'
 
+let s:TagExt = {}
+let s:TagExt['c'] = ''
+let s:TagExt['h'] = '--extra=+fq'
+let s:TagExt['cpp'] = '--extra=+q'
+let s:TagExt['py'] = ''
+let s:TagExt['vim'] = ''
+
 fun! pro#ChangeToRootDir()
     let s:curdir = getcwd()
     silent! lcd -
@@ -65,6 +72,7 @@ fun! pro#CheckFiles(fnames)
             else
                 " file does not exist, remove it from project
                 call remove({s:PScope}:files_dict, fname)
+                " TODO remove tags!!!
                 continue
             endif
         else
@@ -74,7 +82,7 @@ fun! pro#CheckFiles(fnames)
         " save timestamp
         let {s:PScope}:files_dict[fname] = ftime
         let ext = fnamemodify(fname, ":e")
-        if ext == 'c' || ext == 'h' || ext == 'cpp' || ext == 'py' || ext == 'vim'
+        if has_key(s:TagExt, ext)
             if !has_key(update_dict, ext)
                 let update_dict[ext] = [fname]
             else
@@ -98,7 +106,9 @@ fun! pro#CheckFiles(fnames)
     call pro#ChangeToRootDir()
     for ext in keys(update_dict)
         " TODO ctags command line depends on filetype
-        exec "silent !ctags -f ".{s:PScope}:tags_file." -a ".join(update_dict[ext], " ")
+        if has_key(s:TagExt, ext)
+            exec "silent !ctags -f ".{s:PScope}:tags_file." -a "s:TagExt[ext]." ".join(update_dict[ext], " ")
+        endif
     endfor
     call pro#ChangeBackDirs()
     call pro#SaveFun()
@@ -229,7 +239,8 @@ fun! pro#PComplete(Lead, Line, Pos)
     else
         let rval = []
         for f in keys({s:PScope}:files_dict)
-            if -1 != stridx(f, a:Lead)
+            let mf = fnamemodify(f, ":t")
+            if 0 == stridx(mf, a:Lead)
                 call pro#ChangeToRootDir()
                 let f = fnamemodify(f, ":p")
                 call pro#ChangeBackDirs()
@@ -237,6 +248,19 @@ fun! pro#PComplete(Lead, Line, Pos)
                 call add(rval, f)
             endif
         endfor
+        if empty(rval)
+            " no filename begins with a:Lead, do a more
+            " generous search to find matches
+            for f in keys({s:PScope}:files_dict)
+                if -1 != stridx(f, a:Lead)
+                    call pro#ChangeToRootDir()
+                    let f = fnamemodify(f, ":p")
+                    call pro#ChangeBackDirs()
+                    let f = fnamemodify(f, ":.")
+                    call add(rval, f)
+                endif
+            endfor
+        endif
         return rval
     endif
 endfun
