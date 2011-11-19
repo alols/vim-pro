@@ -11,15 +11,6 @@ For Vim version 7.3 and above.
 2. Dependencies		|pro-dependencies|
 3. Commands		|pro-commands|
 
-2. Downloads                                    |pro-download|
-3. Installation                                 |pro-installation|
-4. Options                                      |pro-options|
-5. Features                                     |pro-features|
-6. Limitations                                  |pro-limitations|
-7. FAQ & TIPS                                   |pro-faq|
-8. History                                      |pro-history|
-9. Thanks                                       |pro-thanks|
-
 ==============================================================================
 1. Overview					*pro-overview*
 

@@ -10,7 +10,6 @@ command! Punload call pro#UnloadFun()
 command! -nargs=+ -complete=customlist,pro#PComplete Pe e <args>
 command! -nargs=1 Pgrep call pro#GrepFun(<q-args>)
 command! Pls call pro#ListFiles()
-command! -nargs=1 Pdo call pro#DoFun(<q-args>)
 
 augroup Pro
     au!

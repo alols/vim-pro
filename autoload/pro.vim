@@ -220,18 +220,6 @@ fun! pro#ListFiles()
     call pro#ChangeBackDirs()
 endfun
 
-fun! pro#DoFun(command)
-    if !exists("{s:PScope}:files_dict")
-        echoerr "No project file loaded."
-        return
-    endif
-    call pro#ChangeToRootDir()
-    for f in keys({s:PScope}:files_dict)
-        exec a:command.' '.f
-    endfor
-    call pro#ChangeBackDirs()
-endfun
-
 fun! pro#PComplete(Lead, Line, Pos)
     echom a:Lead
     if !exists("{s:PScope}:files_dict")
