@@ -77,9 +77,7 @@ vimpro requires Exuberant Ctags to be installed and in your path.
 ==============================================================================
 1. TODO						*pro-todo*
 
-	* Make project file format expandable for the future.
 	* Handle if ctags executable is missing.
-	* Handle if a project is loaded that is not a project.
 	* Make :Pe complete on Enter if there is only one match.
 	* Add cscope support.
 

@@ -112,6 +112,7 @@ endfun
 fun! pro#SaveFun()
     if exists("{s:PScope}:project_file")
         let lines = []
+        call add(lines, "!_VIMPRO_FILE_VERSION\t0\t1")
         for i in items({s:PScope}:files_dict)
             call add(lines, join(i, "\t"))
         endfor
@@ -125,11 +126,27 @@ fun! pro#LoadFun(fname)
     let {s:PScope}:tags_file = {s:PScope}:project_file.".tags"
     let {s:PScope}:files_dict = {}
     if filereadable({s:PScope}:project_file)
-        for line in readfile({s:PScope}:project_file)
-            let tokens = split(line, "\t")
-            let {s:PScope}:files_dict[tokens[0]]=tokens[1]
-        endfor
-        call pro#CheckFiles(keys({s:PScope}:files_dict))
+        try
+            let file = readfile({s:PScope}:project_file)
+            let file_ver = split(file[0], "\t")
+            if file_ver[0] != "!_VIMPRO_FILE_VERSION"
+                throw "Not a project file."
+            elseif file_ver[1] > 0
+                throw "You need to update vimpro-plugin to open this project."
+            endif
+            for line in file
+                let tokens = split(line, "\t")
+                if 0 != stridx(tokens[0], "!_VIMPRO_")
+                    let {s:PScope}:files_dict[tokens[0]]=tokens[1]
+                endif
+            endfor
+            call pro#CheckFiles(keys({s:PScope}:files_dict))
+        catch
+            unlet {s:PScope}:project_file {s:PScope}:root_dir
+                        \ {s:PScope}:tags_file {s:PScope}:files_dict
+            echoerr "Error loading project file. ".v:exception
+            return
+        endtry
     endif
     if -1 == stridx(&tags, {s:PScope}:tags_file)
         exec "set tags=".{s:PScope}:tags_file.",".&tags
