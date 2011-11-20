@@ -18,7 +18,7 @@ fun! pro#ChangeBackDirs()
     unlet s:curdir
 endfun
 
-fun! pro#GrepFun(grepcommand)
+fun! pro#Grep(grepcommand)
     if !exists("s:files_dict")
         echoerr "No project file loaded."
     elseif empty(s:files_dict)
@@ -100,10 +100,10 @@ fun! pro#CheckFiles(fnames)
         endif
     endfor
     call pro#ChangeBackDirs()
-    call pro#SaveFun()
+    call pro#Save()
 endfun
 
-fun! pro#SaveFun()
+fun! pro#Save()
     if exists("g:PProjectFile")
         let lines = []
         call add(lines, "!_VIMPRO_FILE_VERSION\t0\t1")
@@ -114,16 +114,16 @@ fun! pro#SaveFun()
     endif
 endfun
 
-fun! pro#CreateFun(fname)
+fun! pro#Create(fname)
     if filereadable(a:fname)
         echoerr "A file with that name already exists."
     else
         call writefile(["!_VIMPRO_FILE_VERSION\t0\t1"], a:fname)
-        call pro#LoadFun(a:fname)
+        call pro#Load(a:fname)
     endif
 endfun
 
-fun! pro#LoadFun(fname)
+fun! pro#Load(fname)
     if !filereadable(a:fname)
         echoerr "No such file."
     else
@@ -158,7 +158,7 @@ fun! pro#LoadFun(fname)
     endif
 endfun
 
-fun! pro#UnloadFun()
+fun! pro#Unload()
     let beg = stridx(&tags, s:tags_file)
     if beg != -1
         let end = 1+stridx(&tags, ",", beg)
@@ -168,7 +168,7 @@ fun! pro#UnloadFun()
                 \ s:tags_file s:files_dict
 endfun
 
-fun! pro#AddFun(...)
+fun! pro#Add(...)
     if !exists("s:files_dict")
         echoerr "No project file loaded."
         return
@@ -191,7 +191,7 @@ fun! pro#AddFun(...)
     call pro#CheckFiles(checkfiles)
 endfun
 
-fun! pro#RemoveFun(...)
+fun! pro#Remove(...)
     if !exists("s:files_dict")
         echoerr "No project file loaded."
         return
@@ -220,7 +220,7 @@ fun! pro#RemoveFun(...)
     if exists("tfile")
         call writefile(tfile, s:tags_file)
     endif
-    call pro#SaveFun()
+    call pro#Save()
 endfun
 
 fun! pro#PComplete(Lead, Line, Pos)
