@@ -1,7 +1,7 @@
 vimpro
 ======
 
-Plug-in for easy navigation of software projects.
+Vim plug-in for easy navigation of software projects.
 
 Author: Albin Olsson
 
@@ -41,17 +41,17 @@ Sample Use
     anything already present. This way you can still use multiple tag
     files.
 
-4.  The next time you start Vim you have to load your project.
+4.  The `:Pe` command works just like :e, but it gives you a lot better
+    tab-completion. The completion is very similar to `:b`, but it is not
+    based on open buffers but on the files in the project.
+
+5.  The `:Pgrep` command works just like `:vimgrep`, but it takes no filenames
+    argument, instead the grep is performed in all project files.
+
+6.  The next time you start Vim you have to load your project.
 
         :Pload {file}
 
     If you use sessions, the project will be part of your session as long as
     it is loaded when you run `mksession`. Loading the session will
     automatically load the project.
-
-5.  The `:Pe` command works just like :e, but it gives you a lot better
-    tab-completion. The completion is very similar to `:b`, but it is not
-    based on open buffers but on the files in the project.
-
-6.  The `:Pgrep` command works just like `:vimgrep`, but it takes no filenames
-    argument, instead the `grep` is performed in all project files.
