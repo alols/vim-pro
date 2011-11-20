@@ -36,7 +36,10 @@ Sample Use
 
         :autocmd BufWritePost *.c Padd %
 
-3.  vimpro will automatically generate a tags file and keep it updated.
+3.  vimpro will automatically generate a tags file and keep it updated. It
+    will add the tags file to your `tags` option, but it will not remove
+    anything already present. This way you can still use multiple tag
+    files.
 
 4.  The next time you start Vim you have to load your project.
 
@@ -47,7 +50,7 @@ Sample Use
     automatically load the project.
 
 5.  The `:Pe` command works just like :e, but it gives you a lot better
-    tab-completion. The completion is very similar to :b, but it is not
+    tab-completion. The completion is very similar to `:b`, but it is not
     based on open buffers but on the files in the project.
 
 6.  The `:Pgrep` command works just like `:vimgrep`, but it takes no filenames
