@@ -3,16 +3,12 @@
 " URL: https://github.com/alols/vim-pro
 "
 
-" project scope is global, change this to 't'
-" to make it local to tab page
-" (EXPERIMENTAL, do not use!!!)
-let s:PScope='g'
 
 fun! pro#ChangeToRootDir()
     let s:curdir = getcwd()
     silent! lcd -
     let s:prevdir = getcwd()
-    exec "lcd ".{s:PScope}:root_dir
+    exec "lcd ".s:root_dir
 endfun
 
 fun! pro#ChangeBackDirs()
@@ -23,13 +19,13 @@ fun! pro#ChangeBackDirs()
 endfun
 
 fun! pro#GrepFun(grepcommand)
-    if !exists("{s:PScope}:files_dict")
+    if !exists("s:files_dict")
         echoerr "No project file loaded."
-    elseif empty({s:PScope}:files_dict)
+    elseif empty(s:files_dict)
         echoerr "No files in project."
     else
         call pro#ChangeToRootDir()
-        let grepcommand = "vimgrep ".a:grepcommand.' '.join(keys({s:PScope}:files_dict), ' ')
+        let grepcommand = "vimgrep ".a:grepcommand.' '.join(keys(s:files_dict), ' ')
         try
             exec grepcommand
             " will highlight the matches
@@ -42,7 +38,7 @@ fun! pro#GrepFun(grepcommand)
 endfun
 
 fun! pro#CheckFiles(fnames)
-    if !exists("{s:PScope}:files_dict")
+    if !exists("s:files_dict")
         return
     endif
     let update_dict = {}   " files to update in tag file ordered by extensions
@@ -57,9 +53,9 @@ fun! pro#CheckFiles(fnames)
         " check when it was modified
         let ftime = getftime(fname)
         call pro#ChangeBackDirs()
-        if has_key({s:PScope}:files_dict, fname)
+        if has_key(s:files_dict, fname)
             if readable
-                if {s:PScope}:files_dict[fname] == ftime
+                if s:files_dict[fname] == ftime
                     " file is already part of project
                     " and is unmodified
                     continue
@@ -73,16 +69,16 @@ fun! pro#CheckFiles(fnames)
             continue
         endif
         " save timestamp
-        let {s:PScope}:files_dict[fname] = ftime
+        let s:files_dict[fname] = ftime
         let ext = fnamemodify(fname, ":e")
         if !has_key(update_dict, ext)
             let update_dict[ext] = [fname]
         else
             call add(update_dict[ext], fname)
         endif
-        if filereadable({s:PScope}:tags_file)
+        if filereadable(s:tags_file)
             if empty(tfile)
-                let tfile = readfile({s:PScope}:tags_file)
+                let tfile = readfile(s:tags_file)
             endif
             let i = match(tfile, fname)
             while i >= 0
@@ -92,15 +88,15 @@ fun! pro#CheckFiles(fnames)
         endif
     endfor
     if !empty(tfile)
-        call writefile(tfile, {s:PScope}:tags_file)
+        call writefile(tfile, s:tags_file)
     endif
     call pro#ChangeToRootDir()
     for ext in keys(update_dict)
         " TODO ctags command line depends on filetype
         if has_key(g:PTagExt, ext)
-            exec "silent !ctags -f ".{s:PScope}:tags_file." -a "g:PTagExt[ext]." ".join(update_dict[ext], " ")
+            exec "silent !ctags -f ".s:tags_file." -a "g:PTagExt[ext]." ".join(update_dict[ext], " ")
         else
-            exec "silent !ctags -f ".{s:PScope}:tags_file." -a ".join(update_dict[ext], " ")
+            exec "silent !ctags -f ".s:tags_file." -a ".join(update_dict[ext], " ")
         endif
     endfor
     call pro#ChangeBackDirs()
@@ -108,13 +104,13 @@ fun! pro#CheckFiles(fnames)
 endfun
 
 fun! pro#SaveFun()
-    if exists("{s:PScope}:project_file")
+    if exists("g:PProjectFile")
         let lines = []
         call add(lines, "!_VIMPRO_FILE_VERSION\t0\t1")
-        for i in items({s:PScope}:files_dict)
+        for i in items(s:files_dict)
             call add(lines, join(i, "\t"))
         endfor
-        call writefile(lines, {s:PScope}:project_file)
+        call writefile(lines, g:PProjectFile)
     endif
 endfun
 
@@ -131,12 +127,12 @@ fun! pro#LoadFun(fname)
     if !filereadable(a:fname)
         echoerr "No such file."
     else
-        let {s:PScope}:project_file = fnamemodify(a:fname, ":p")
-        let {s:PScope}:root_dir = fnamemodify({s:PScope}:project_file, ":p:h")
-        let {s:PScope}:tags_file = {s:PScope}:project_file.".tags"
-        let {s:PScope}:files_dict = {}
+        let g:PProjectFile = fnamemodify(a:fname, ":p")
+        let s:root_dir = fnamemodify(g:PProjectFile, ":p:h")
+        let s:tags_file = g:PProjectFile.".tags"
+        let s:files_dict = {}
         try
-            let file = readfile({s:PScope}:project_file)
+            let file = readfile(g:PProjectFile)
             let file_ver = split(file[0], "\t")
             if file_ver[0] != "!_VIMPRO_FILE_VERSION"
                 throw "Not a project file."
@@ -146,34 +142,34 @@ fun! pro#LoadFun(fname)
             for line in file
                 let tokens = split(line, "\t")
                 if 0 != stridx(tokens[0], "!_VIMPRO_")
-                    let {s:PScope}:files_dict[tokens[0]]=tokens[1]
+                    let s:files_dict[tokens[0]]=tokens[1]
                 endif
             endfor
-            call pro#CheckFiles(keys({s:PScope}:files_dict))
+            call pro#CheckFiles(keys(s:files_dict))
         catch
-            unlet {s:PScope}:project_file {s:PScope}:root_dir
-                        \ {s:PScope}:tags_file {s:PScope}:files_dict
+            unlet g:PProjectFile s:root_dir
+                        \ s:tags_file s:files_dict
             echoerr "Error loading project file. ".v:exception
             return
         endtry
-        if -1 == stridx(&tags, {s:PScope}:tags_file)
-            exec "set tags=".{s:PScope}:tags_file.",".&tags
+        if -1 == stridx(&tags, s:tags_file)
+            exec "set tags=".s:tags_file.",".&tags
         endif
     endif
 endfun
 
 fun! pro#UnloadFun()
-    let beg = stridx(&tags, {s:PScope}:tags_file)
+    let beg = stridx(&tags, s:tags_file)
     if beg != -1
         let end = 1+stridx(&tags, ",", beg)
         exec "set tags=".strpart(&tags, 0, beg).strpart(&tags, end)
     endif
-    unlet {s:PScope}:project_file {s:PScope}:root_dir
-                \ {s:PScope}:tags_file {s:PScope}:files_dict
+    unlet g:PProjectFile s:root_dir
+                \ s:tags_file s:files_dict
 endfun
 
 fun! pro#AddFun(...)
-    if !exists("{s:PScope}:files_dict")
+    if !exists("s:files_dict")
         echoerr "No project file loaded."
         return
     endif
@@ -187,7 +183,7 @@ fun! pro#AddFun(...)
                 call pro#ChangeToRootDir()
                 let fname = fnamemodify(fname, ":.")
                 call pro#ChangeBackDirs()
-                let {s:PScope}:files_dict[fname]=0
+                let s:files_dict[fname]=0
                 call add(checkfiles, fname)
             endif
         endfor
@@ -196,12 +192,12 @@ fun! pro#AddFun(...)
 endfun
 
 fun! pro#RemoveFun(...)
-    if !exists("{s:PScope}:files_dict")
+    if !exists("s:files_dict")
         echoerr "No project file loaded."
         return
     endif
-    if filereadable({s:PScope}:tags_file)
-        let tfile = readfile({s:PScope}:tags_file)
+    if filereadable(s:tags_file)
+        let tfile = readfile(s:tags_file)
     endif
     for a in a:000
         for f in split(expand(a), '\n')
@@ -209,8 +205,8 @@ fun! pro#RemoveFun(...)
             call pro#ChangeToRootDir()
             let fname = fnamemodify(fname, ":.")
             call pro#ChangeBackDirs()
-            if has_key({s:PScope}:files_dict, fname)
-                call remove({s:PScope}:files_dict, fname)
+            if has_key(s:files_dict, fname)
+                call remove(s:files_dict, fname)
             endif
             if exists("tfile")
                 let i = match(tfile, fname)
@@ -222,18 +218,18 @@ fun! pro#RemoveFun(...)
         endfor
     endfor
     if exists("tfile")
-        call writefile(tfile, {s:PScope}:tags_file)
+        call writefile(tfile, s:tags_file)
     endif
     call pro#SaveFun()
 endfun
 
 fun! pro#PComplete(Lead, Line, Pos)
     echom a:Lead
-    if !exists("{s:PScope}:files_dict")
+    if !exists("s:files_dict")
         return []
     else
         let rval = []
-        for f in keys({s:PScope}:files_dict)
+        for f in keys(s:files_dict)
             let mf = fnamemodify(f, ":t")
             if 0 == stridx(mf, a:Lead)
                 call pro#ChangeToRootDir()
@@ -246,7 +242,7 @@ fun! pro#PComplete(Lead, Line, Pos)
         if empty(rval)
             " no filename begins with a:Lead, do a more
             " generous search to find matches
-            for f in keys({s:PScope}:files_dict)
+            for f in keys(s:files_dict)
                 if -1 != stridx(f, a:Lead)
                     call pro#ChangeToRootDir()
                     let f = fnamemodify(f, ":p")
