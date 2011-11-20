@@ -92,7 +92,6 @@ fun! pro#CheckFiles(fnames)
     endif
     call pro#ChangeToRootDir()
     for ext in keys(update_dict)
-        " TODO ctags command line depends on filetype
         if has_key(g:PTagExt, ext)
             exec "silent !ctags -f ".s:tags_file." -a "g:PTagExt[ext]." ".join(update_dict[ext], " ")
         else
