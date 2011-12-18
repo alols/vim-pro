@@ -3,7 +3,7 @@
 " URL: https://github.com/alols/vim-pro
 "
 
-
+"Helper functions needed so that paths can be relative
 fun! pro#ChangeToRootDir()
     let s:curdir = getcwd()
     silent! lcd -
@@ -92,11 +92,21 @@ fun! pro#CheckFiles(fnames)
     endif
     call pro#ChangeToRootDir()
     for ext in keys(update_dict)
+        let ctags_cmd = "silent !ctags -f ".s:tags_file." -a"
         if has_key(g:PTagExt, ext)
-            exec "silent !ctags -f ".s:tags_file." -a "g:PTagExt[ext]." ".join(update_dict[ext], " ")
-        else
-            exec "silent !ctags -f ".s:tags_file." -a ".join(update_dict[ext], " ")
+            let ctags_cmd = ctags_cmd." ".g:PTagExt[ext]
         endif
+        " Need to do this as a loop because MS Windows has a
+        " ridiculous cmd line max length.
+        let cmdline = ctags_cmd
+        for f in update_dict[ext]
+            if strlen(cmdline) + strlen(f) + 1 > 2047
+                exec cmdline
+                let cmdline = ctags_cmd
+            endif
+            let cmdline = cmdline." ".f
+        endfor
+        exec cmdline
     endfor
     call pro#ChangeBackDirs()
     call pro#Save()
