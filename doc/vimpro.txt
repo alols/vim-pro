@@ -61,6 +61,16 @@ vimpro requires Exuberant Ctags to be installed and in your path.
 			Also see |wildmode| and |wildchar|.
 			Also see |++opt| and |+cmd|.
 
+							*:Pset*
+:Pset {settings}	Set vim settings for project.
+			{settings} will be applied to every file
+			belonging to the project when it is opened,
+			before the modelines are applied.
+			When {settings} is empty, print the current
+			settings.
+			Note that this command does not add settings,
+			but overwrites them.
+
 							*:Pload*
 :Pload {file}		Load project {file}.
 			This will change the |tags-option| to include the

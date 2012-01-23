@@ -48,7 +48,11 @@ Sample Use
 5.  The `:Pgrep` command works just like `:vimgrep`, but it takes no filenames
     argument, instead the grep is performed in all project files.
 
-6.  The next time you start Vim you have to load your project.
+6.  Use `:Pset ts=4 sts=4 sw=4 et` to set the indention settings for all files
+    in the project. vimpro will remember this. It can be overridden with
+    modelines.
+
+7.  The next time you start Vim you have to load your project.
 
         :Pload {file}
 

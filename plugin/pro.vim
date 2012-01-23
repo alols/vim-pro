@@ -36,6 +36,9 @@ command! -nargs=+ -complete=customlist,pro#PComplete Pe
 command! -nargs=1 Pgrep
             \ call pro#Grep(<q-args>)
 
+command! -nargs=? Pset
+            \ call pro#Set(<q-args>)
+
 augroup Pro
     au!
 
@@ -48,6 +51,9 @@ augroup Pro
             \     call garbagecollect() |
             \     redraw! |
             \ endif
+
+    autocmd BufReadPost *
+            \ call pro#CheckSettings(expand("<afile>"))
 
 augroup END
 

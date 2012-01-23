@@ -18,6 +18,22 @@ fun! pro#ChangeBackDirs()
     unlet s:curdir
 endfun
 
+fun! pro#HereToProject(Fname)
+    let fname = fnamemodify(a:Fname, ":p")
+    call pro#ChangeToRootDir()
+    let fname = fnamemodify(fname, ":.")
+    call pro#ChangeBackDirs()
+    return fname
+endfun
+
+fun! pro#ProjectToHere(Fname)
+    call pro#ChangeToRootDir()
+    let fname = fnamemodify(a:Fname, ":p")
+    call pro#ChangeBackDirs()
+    let fname = fnamemodify(fname, ":.")
+    return fname
+endfun
+
 fun! pro#Grep(grepcommand)
     if !exists("s:files_dict")
         echoerr "No project file loaded."
@@ -44,13 +60,9 @@ fun! pro#CheckFiles(fnames)
     let update_dict = {}   " files to update in tag file ordered by extensions
     let tfile = []         " this variable will hold the tag file if we need to open it
     for fname in a:fnames
-        let fname = fnamemodify(fname, ":p")
+        let fname = pro#HereToProject(fname)
         call pro#ChangeToRootDir()
-        " get the filename relative to project root
-        let fname = fnamemodify(fname, ":.")
-        " check if the file exists
         let readable = filereadable(fname)
-        " check when it was modified
         let ftime = getftime(fname)
         call pro#ChangeBackDirs()
         if has_key(s:files_dict, fname)
@@ -116,6 +128,9 @@ fun! pro#Save()
     if exists("g:PProjectFile")
         let lines = []
         call add(lines, "!_VIMPRO_FILE_VERSION\t0\t1")
+        if exists("s:settings")
+            call add(lines, "!_VIMPRO_SETTINGS\t".s:settings)
+        endif
         for i in items(s:files_dict)
             call add(lines, join(i, "\t"))
         endfor
@@ -152,6 +167,8 @@ fun! pro#Load(fname)
                 let tokens = split(line, "\t")
                 if 0 != stridx(tokens[0], "!_VIMPRO_")
                     let s:files_dict[tokens[0]]=tokens[1]
+                elseif tokens[0] == "!_VIMPRO_SETTINGS"
+                    let s:settings = tokens[1]
                 endif
             endfor
             call pro#CheckFiles(keys(s:files_dict))
@@ -188,10 +205,7 @@ fun! pro#Add(...)
             if !filereadable(f)
                 echoerr f.": file does not exist."
             else
-                let fname = fnamemodify(f, ":p")
-                call pro#ChangeToRootDir()
-                let fname = fnamemodify(fname, ":.")
-                call pro#ChangeBackDirs()
+                let fname = pro#HereToProject(f)
                 let s:files_dict[fname]=0
                 call add(checkfiles, fname)
             endif
@@ -210,10 +224,7 @@ fun! pro#Remove(...)
     endif
     for a in a:000
         for f in split(expand(a), '\n')
-            let fname = fnamemodify(f, ":p")
-            call pro#ChangeToRootDir()
-            let fname = fnamemodify(fname, ":.")
-            call pro#ChangeBackDirs()
+            let fname = pro#HereToProject(f)
             if has_key(s:files_dict, fname)
                 call remove(s:files_dict, fname)
             endif
@@ -241,10 +252,7 @@ fun! pro#PComplete(Lead, Line, Pos)
         for f in keys(s:files_dict)
             let mf = fnamemodify(f, ":t")
             if 0 == stridx(mf, a:Lead)
-                call pro#ChangeToRootDir()
-                let f = fnamemodify(f, ":p")
-                call pro#ChangeBackDirs()
-                let f = fnamemodify(f, ":.")
+                let f = pro#ProjectToHere(f)
                 call add(rval, f)
             endif
         endfor
@@ -253,10 +261,7 @@ fun! pro#PComplete(Lead, Line, Pos)
             " generous search to find matches
             for f in keys(s:files_dict)
                 if -1 != stridx(f, a:Lead)
-                    call pro#ChangeToRootDir()
-                    let f = fnamemodify(f, ":p")
-                    call pro#ChangeBackDirs()
-                    let f = fnamemodify(f, ":.")
+                    let f = pro#ProjectToHere(f)
                     call add(rval, f)
                 endif
             endfor
@@ -265,3 +270,29 @@ fun! pro#PComplete(Lead, Line, Pos)
     endif
 endfun
 
+fun! pro#Set(Settings)
+    if !exists("s:files_dict")
+        echoerr "No project file loaded."
+        return
+    endif
+    if empty(a:Settings)
+        if exists("s:settings")
+            echo s:settings
+        endif
+    else
+        let s:settings = a:Settings
+        bufdo if has_key(s:files_dict, pro#HereToProject(expand('%'))) |
+                    \ exec "setlocal ".s:settings | endif
+        call pro#Save()
+    endif
+endfun
+
+fun! pro#CheckSettings(Fname)
+    if !exists("s:settings")
+        return
+    endif
+    let fname = pro#HereToProject(a:Fname)
+    if has_key(s:files_dict, fname)
+        exec "setlocal ".s:settings
+    endif
+endfun
