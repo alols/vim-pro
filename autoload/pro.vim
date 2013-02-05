@@ -296,3 +296,16 @@ fun! pro#CheckSettings(Fname)
         exec "setlocal ".s:settings
     endif
 endfun
+
+fun! List()
+    if !exists("s:files_dict")
+        echoerr "No project file loaded."
+    else
+        let lines = []
+        for f in keys(s:files_dict)
+            let f = pro#ProjectToHere(f)
+            call add(lines, {'filename' : f, 'lnum' : 1})
+        endfor
+        call setqflist(lines)
+    endif
+endfun

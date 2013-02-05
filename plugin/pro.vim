@@ -58,6 +58,9 @@ augroup Pro
 augroup END
 
 " Suggested mappings
-" Leader-a  =  Find all occurances of word under cursor
+" Leader-f  =  Find all occurances of word under cursor
 "              and open the quickfix-window
-nnoremap <Leader>a :exec "silent Pgrep /\\<".expand('<cword>')."\\>/gj"<CR>:cw<CR>
+nnoremap <Leader>f :exec "silent Pgrep /\\<".expand('<cword>')."\\>/gj"<CR>:cw<CR>
+
+
+
